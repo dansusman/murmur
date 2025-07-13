@@ -51,8 +51,10 @@ class WhisperService: NSObject, ObservableObject {
                 
                 DispatchQueue.main.async {
                     if !transcription.isEmpty {
+                        Logger.whisper.success("✅ Transcription successful: \"\(transcription)\"")
                         self.delegate?.whisperService(self, didTranscribe: transcription)
                     } else {
+                        Logger.whisper.warning("❌ Transcription returned empty result")
                         self.delegate?.whisperService(self, didFailWithError: WhisperServiceError.emptyTranscription)
                     }
                 }

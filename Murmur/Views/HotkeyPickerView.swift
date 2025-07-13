@@ -116,9 +116,3 @@ private let commonHotkeys: [HotkeyOption] = [
     HotkeyOption(name: "Tab", key: 48),
     HotkeyOption(name: "Return", key: 36)
 ]
-
-#Preview {
-    HotkeyPickerView(selectedKeyCode: .constant(63)) {
-        print("Hotkey picker completed")
-    }
-}

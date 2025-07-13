@@ -50,6 +50,9 @@
     <key>NSSystemAdministrationUsageDescription</key>
     <string>Murmur needs system administration access for global hotkey detection.</string>
     
+    <key>NSAccessibilityUsageDescription</key>
+    <string>Murmur needs accessibility access to insert transcribed text into other applications.</string>
+    
     <!-- App category -->
     <key>LSApplicationCategoryType</key>
     <string>public.app-category.productivity</string>

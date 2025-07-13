@@ -10,14 +10,15 @@ class WhisperCppWrapper: NSObject, ObservableObject {
     
     override init() {
         // Get paths to bundled resources
-        if let binaryPath = Bundle.main.path(forResource: "whisper", ofType: nil, inDirectory: "Binaries") {
+        if let binaryPath = Bundle.main.path(forResource: "whisper", ofType: nil) {
             whisperBinaryPath = binaryPath
         } else {
             whisperBinaryPath = ""
         }
         
-        if let modelsPath = Bundle.main.path(forResource: "Models", ofType: nil) {
-            modelsDirectory = modelsPath
+        // Since the models are in the root of Resources, look for them there
+        if let resourcesPath = Bundle.main.resourcePath {
+            modelsDirectory = resourcesPath
         } else {
             modelsDirectory = ""
         }
@@ -50,7 +51,7 @@ class WhisperCppWrapper: NSObject, ObservableObject {
                 )
             }
         } catch {
-            print("Failed to load available models: \(error)")
+            Logger.whisper.error("Failed to load available models: \(error)")
         }
     }
     
@@ -172,8 +173,18 @@ class WhisperCppWrapper: NSObject, ObservableObject {
             return true
         }
         
-        return filteredLines.joined(separator: " ")
+        let joinedOutput = filteredLines.joined(separator: " ")
             .trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // Remove ANSI escape codes (color formatting)
+        return removeAnsiEscapeCodes(joinedOutput)
+    }
+    
+    private func removeAnsiEscapeCodes(_ text: String) -> String {
+        // Regular expression to match ANSI escape sequences
+        let ansiRegex = try! NSRegularExpression(pattern: "\\x1B\\[[0-?]*[ -/]*[@-~]", options: [])
+        let range = NSRange(location: 0, length: text.utf16.count)
+        return ansiRegex.stringByReplacingMatches(in: text, options: [], range: range, withTemplate: "")
     }
     
     func getModelInfo(for modelType: WhisperModelType) -> WhisperModel? {

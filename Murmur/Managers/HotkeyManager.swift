@@ -11,6 +11,7 @@ class HotkeyManager: ObservableObject {
     private var isHotkeyPressed = false
     
     init() {
+        Logger.hotkey.info("🚀 Initializing HotkeyManager")
         setupEventHandler()
     }
     
@@ -22,12 +23,13 @@ class HotkeyManager: ObservableObject {
     }
     
     private func setupEventHandler() {
+        Logger.hotkey.info("🔧 Setting up event handler")
         let eventType = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: OSType(kEventHotKeyPressed))
         let eventTypeReleased = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: OSType(kEventHotKeyReleased))
         
         let eventTypes = [eventType, eventTypeReleased]
         
-        InstallEventHandler(
+        let result = InstallEventHandler(
             GetEventDispatcherTarget(),
             { (nextHandler, event, userData) -> OSStatus in
                 guard let userData, let event else { return OSStatus(eventNotHandledErr) }
@@ -39,26 +41,47 @@ class HotkeyManager: ObservableObject {
             UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque()),
             &eventHandler
         )
+        
+        if result != noErr {
+            Logger.hotkey.error("Failed to install event handler, status: \(result)")
+        } else {
+            Logger.hotkey.success("Event handler installed successfully")
+        }
     }
     
     private func handleHotkeyEvent(event: EventRef) -> OSStatus {
-        guard event != nil else { return OSStatus(eventNotHandledErr) }
+        guard event != nil else { 
+            Logger.hotkey.warning("handleHotkeyEvent: event is nil")
+            return OSStatus(eventNotHandledErr) 
+        }
         
         let eventClass = GetEventClass(event)
         let eventKindValue = GetEventKind(event)
         
+        Logger.hotkey.debug("handleHotkeyEvent: eventClass=\(eventClass), eventKind=\(eventKindValue)")
+        
         if eventClass == OSType(kEventClassKeyboard) {
             if eventKindValue == OSType(kEventHotKeyPressed) && !isHotkeyPressed {
                 isHotkeyPressed = true
+                let keyName = Self.getKeyName(for: currentKeyCode) ?? "Unknown"
+                Logger.hotkey.info("🔥 Hotkey pressed: \(keyName) (code: \(currentKeyCode))")
+                Logger.hotkey.debug("Calling delegate.hotkeyPressed()")
                 DispatchQueue.main.async {
                     self.delegate?.hotkeyPressed()
                 }
             } else if eventKindValue == OSType(kEventHotKeyReleased) && isHotkeyPressed {
                 isHotkeyPressed = false
+                let keyName = Self.getKeyName(for: currentKeyCode) ?? "Unknown"
+                Logger.hotkey.info("🔥 Hotkey released: \(keyName) (code: \(currentKeyCode))")
+                Logger.hotkey.debug("Calling delegate.hotkeyReleased()")
                 DispatchQueue.main.async {
                     self.delegate?.hotkeyReleased()
                 }
+            } else {
+                Logger.hotkey.debug("Event ignored - eventKind=\(eventKindValue), isHotkeyPressed=\(isHotkeyPressed)")
             }
+        } else {
+            Logger.hotkey.debug("Event ignored - not keyboard event (eventClass=\(eventClass))")
         }
         
         return noErr
@@ -69,6 +92,9 @@ class HotkeyManager: ObservableObject {
         unregisterHotkey()
         
         currentKeyCode = keyCode
+        let keyName = Self.getKeyName(for: keyCode) ?? "Unknown"
+        
+        Logger.hotkey.info("🔧 Registering hotkey: \(keyName) (code: \(keyCode))")
         
         // Register new hotkey
         let hotKeyID = EventHotKeyID(signature: OSType(0x4D554D52), id: UInt32(1)) // 'MUMR'
@@ -83,9 +109,9 @@ class HotkeyManager: ObservableObject {
         )
         
         if status != noErr {
-            print("Failed to register hotkey with code: \(keyCode), status: \(status)")
+            Logger.hotkey.error("Failed to register hotkey \(keyName) (code: \(keyCode)), status: \(status)")
         } else {
-            print("Successfully registered hotkey with code: \(keyCode)")
+            Logger.hotkey.success("Successfully registered hotkey \(keyName) (code: \(keyCode))")
         }
     }
     

@@ -10,6 +10,7 @@ class AudioManager: NSObject, ObservableObject {
     private var audioBuffer: AVAudioPCMBuffer?
     private var audioFormat: AVAudioFormat?
     private var recordedAudioData = Data()
+    private var audioConverter: AVAudioConverter?
     
     @Published var isRecording = false
     @Published var recordingPermissionGranted = false
@@ -17,7 +18,7 @@ class AudioManager: NSObject, ObservableObject {
     override init() {
         super.init()
         setupAudioEngine()
-        requestMicrophonePermission()
+        checkMicrophonePermission()
     }
     
     deinit {
@@ -40,7 +41,7 @@ class AudioManager: NSObject, ObservableObject {
         )
         
         guard let audioFormat = audioFormat else {
-            print("Failed to create audio format")
+            Logger.audio.error("Failed to create audio format")
             return
         }
         
@@ -49,92 +50,157 @@ class AudioManager: NSObject, ObservableObject {
         audioBuffer = AVAudioPCMBuffer(pcmFormat: audioFormat, frameCapacity: bufferSize)
     }
     
-    private func requestMicrophonePermission() {
-        switch AVCaptureDevice.authorizationStatus(for: .audio) {
-        case .authorized:
-            DispatchQueue.main.async {
-                self.recordingPermissionGranted = true
-            }
-        case .notDetermined:
-            AVCaptureDevice.requestAccess(for: .audio) { [weak self] granted in
-                DispatchQueue.main.async {
-                    self?.recordingPermissionGranted = granted
-                    if !granted {
-                        print("Microphone permission denied")
-                    }
-                }
-            }
-        case .denied, .restricted:
-            DispatchQueue.main.async {
-                self.recordingPermissionGranted = false
-                print("Microphone permission denied")
-            }
-        @unknown default:
-            DispatchQueue.main.async {
-                self.recordingPermissionGranted = false
-                print("Unknown microphone permission status")
+    private func checkMicrophonePermission() {
+        let status = AVCaptureDevice.authorizationStatus(for: .audio)
+        recordingPermissionGranted = (status == .authorized)
+        
+        if recordingPermissionGranted {
+            Logger.audio.info("🎤 Microphone permission already granted")
+        } else {
+            Logger.audio.warning("🎤 Microphone permission not granted")
+        }
+    }
+    
+    func pollMicrophonePermission() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            let status = AVCaptureDevice.authorizationStatus(for: .audio)
+            self.recordingPermissionGranted = (status == .authorized)
+            
+            if !self.recordingPermissionGranted {
+                self.pollMicrophonePermission()
             }
         }
     }
     
+    static func requestMicrophonePermission() {
+        let status = AVCaptureDevice.authorizationStatus(for: .audio)
+        
+        switch status {
+        case .authorized:
+            Logger.audio.info("🎤 Microphone permission already granted")
+        case .notDetermined:
+            Logger.audio.info("🎤 Requesting microphone permission...")
+            AVCaptureDevice.requestAccess(for: .audio) { granted in
+                if granted {
+                    Logger.audio.success("🎤 Microphone permission granted")
+                } else {
+                    Logger.audio.error("🎤 Microphone permission denied")
+                }
+            }
+        case .denied, .restricted:
+            Logger.audio.error("🎤 Microphone permission previously denied")
+        @unknown default:
+            Logger.audio.warning("🎤 Unknown microphone permission status")
+        }
+    }
+    
     func startRecording() {
+        Logger.audio.info("🎤 startRecording() called")
+        
         guard recordingPermissionGranted else {
-            print("Recording permission not granted")
+            Logger.audio.error("Recording permission not granted")
             delegate?.audioManager(self, didFailWithError: AudioManagerError.permissionDenied)
             return
         }
         
         guard let audioEngine = audioEngine,
-              let inputNode = inputNode,
-              let audioFormat = audioFormat else {
+              let inputNode = inputNode else {
+            Logger.audio.error("Audio engine setup failed")
             delegate?.audioManager(self, didFailWithError: AudioManagerError.setupFailed)
             return
         }
         
+        Logger.audio.info("🔧 Setting up audio recording...")
+        
         // Reset recorded data
         recordedAudioData = Data()
         
-        // Install tap to capture audio
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: audioFormat) { [weak self] (buffer, time) in
+        // Use the input node's hardware format for the tap
+        let inputFormat = inputNode.inputFormat(forBus: 0)
+        Logger.audio.debug("🔧 Hardware format: \(inputFormat.sampleRate)Hz, \(inputFormat.channelCount) channels")
+        
+        // Setup audio converter for resampling to 16kHz
+        guard let targetFormat = audioFormat else {
+            Logger.audio.error("Target audio format not available")
+            delegate?.audioManager(self, didFailWithError: AudioManagerError.setupFailed)
+            return
+        }
+        
+        audioConverter = AVAudioConverter(from: inputFormat, to: targetFormat)
+        guard audioConverter != nil else {
+            Logger.audio.error("Failed to create audio converter")
+            delegate?.audioManager(self, didFailWithError: AudioManagerError.setupFailed)
+            return
+        }
+        
+        // Install tap to capture audio using hardware format
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: inputFormat) { [weak self] (buffer, time) in
             self?.processAudioBuffer(buffer)
         }
         
         do {
             try audioEngine.start()
+            Logger.audio.success("Audio engine started successfully")
             DispatchQueue.main.async {
                 self.isRecording = true
                 self.delegate?.audioManager(self, didStartRecording: true)
             }
         } catch {
-            print("Failed to start audio engine: \(error)")
+            Logger.audio.error("Failed to start audio engine: \(error)")
             delegate?.audioManager(self, didFailWithError: error)
         }
     }
     
     func stopRecording() {
-        guard let audioEngine = audioEngine,
-              let inputNode = inputNode else { return }
+        Logger.audio.info("🛑 stopRecording() called")
         
+        guard let audioEngine = audioEngine,
+              let inputNode = inputNode else { 
+            Logger.audio.warning("stopRecording() - audio engine or input node is nil")
+            return 
+        }
+        
+        Logger.audio.info("🔧 Stopping audio engine...")
         inputNode.removeTap(onBus: 0)
         audioEngine.stop()
         
         DispatchQueue.main.async {
             self.isRecording = false
             
+            Logger.audio.info("🔄 Converting audio to WAV format...")
             // Convert to WAV format for whisper.cpp
             if let wavData = self.convertToWAV() {
+                Logger.audio.success("Audio conversion successful, size: \(wavData.count) bytes")
                 self.delegate?.audioManager(self, didFinishRecording: wavData)
             } else {
+                Logger.audio.error("Audio conversion failed")
                 self.delegate?.audioManager(self, didFailWithError: AudioManagerError.recordingFailed)
             }
         }
     }
     
     private func processAudioBuffer(_ buffer: AVAudioPCMBuffer) {
-        guard let floatChannelData = buffer.floatChannelData else { return }
+        guard let converter = audioConverter,
+              let targetFormat = audioFormat else { return }
         
-        let frameLength = Int(buffer.frameLength)
-        let channelCount = Int(buffer.format.channelCount)
+        // Calculate output buffer size based on sample rate ratio
+        let ratio = targetFormat.sampleRate / buffer.format.sampleRate
+        let outputFrameCount = AVAudioFrameCount(Double(buffer.frameLength) * ratio)
+        
+        guard let outputBuffer = AVAudioPCMBuffer(pcmFormat: targetFormat, frameCapacity: outputFrameCount) else {
+            return
+        }
+        
+        var error: NSError?
+        let status = converter.convert(to: outputBuffer, error: &error) { _, outStatus in
+            outStatus.pointee = .haveData
+            return buffer
+        }
+        
+        guard status == .haveData, let floatChannelData = outputBuffer.floatChannelData else { return }
+        
+        let frameLength = Int(outputBuffer.frameLength)
+        let channelCount = Int(outputBuffer.format.channelCount)
         
         // Convert float32 to Data (for Whisper processing)
         for channel in 0..<channelCount {

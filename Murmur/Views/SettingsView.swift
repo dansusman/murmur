@@ -260,13 +260,7 @@ struct AdvancedSettingsView: View {
                         Text("• Input monitoring - for global hotkey detection")
                         
                         Button("Open System Settings") {
-                            // Use the correct URL scheme for macOS 13+ (System Settings)
-                            if #available(macOS 13.0, *) {
-                                NSWorkspace.shared.open(URL(string: "x-apple.systemsettings:com.apple.settings.PrivacySecurity.extension")!)
-                            } else {
-                                // Fallback for older macOS versions (System Preferences)
-                                NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy")!)
-                            }
+                            NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/System Settings.app"))
                         }
                         .buttonStyle(.bordered)
                     }
@@ -282,7 +276,7 @@ struct AdvancedSettingsView: View {
                                 exportedSettings = String(data: data, encoding: .utf8) ?? ""
                                 showingExportAlert = true
                             } catch {
-                                print("Failed to export settings: \(error)")
+                                Logger.settings.error("Failed to export settings: \(error)")
                             }
                         }
                         .buttonStyle(.bordered)
@@ -301,7 +295,7 @@ struct AdvancedSettingsView: View {
                                         settingsManager.importSettings(settings)
                                     }
                                 } catch {
-                                    print("Failed to import settings: \(error)")
+                                    Logger.settings.error("Failed to import settings: \(error)")
                                 }
                             }
                         }
@@ -327,7 +321,7 @@ struct AdvancedSettingsView: View {
                     do {
                         try exportedSettings.write(to: url, atomically: true, encoding: .utf8)
                     } catch {
-                        print("Failed to save settings: \(error)")
+                        Logger.settings.error("Failed to save settings: \(error)")
                     }
                 }
             }

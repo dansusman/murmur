@@ -11,23 +11,42 @@ class TextInjector: NSObject, ObservableObject {
     }
     
     private func checkAccessibilityPermission() {
-        hasAccessibilityPermission = AXIsProcessTrustedWithOptions([
-            kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true
-        ] as CFDictionary)
+        let trusted = AXIsProcessTrusted()
+        hasAccessibilityPermission = trusted
+        Logger.textInjector.info("🔍 Accessibility permission check: \(trusted ? "✅ GRANTED" : "❌ NOT GRANTED")")
     }
     
-    func requestAccessibilityPermission() {
-        checkAccessibilityPermission()
+    func pollAccessibilityPermission() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            let trusted = AXIsProcessTrusted()
+            self.hasAccessibilityPermission = trusted
+            Logger.textInjector.debug("🔍 Polling accessibility permission: \(trusted ? "✅ GRANTED" : "❌ NOT GRANTED")")
+
+            if !self.hasAccessibilityPermission {
+                self.pollAccessibilityPermission()
+            } else {
+                Logger.textInjector.success("✅ Accessibility permission polling stopped - permission granted!")
+            }
+        }
+    }
+    
+    static func requestAccessibilityPermission() {
+        let options: NSDictionary = [kAXTrustedCheckOptionPrompt.takeRetainedValue() as NSString: true]
+        let _ = AXIsProcessTrustedWithOptions(options)
     }
     
     func injectText(_ text: String) {
+        Logger.textInjector.debug("🔍 TextInjector.injectText called with: \"\(text)\"")
+        Logger.textInjector.debug("🔍 Current accessibility permission status: \(hasAccessibilityPermission)")
+        
         guard hasAccessibilityPermission else {
-            print("Accessibility permission not granted")
+            Logger.textInjector.warning("❌ Accessibility permission not granted - requesting permission...")
+            TextInjector.requestAccessibilityPermission()
             return
         }
         
         guard !text.isEmpty else {
-            print("Empty text to inject")
+            Logger.textInjector.warning("❌ Empty text to inject")
             return
         }
         
@@ -74,7 +93,7 @@ class TextInjector: NSObject, ObservableObject {
     // Alternative method: Direct text insertion via Accessibility API
     private func injectTextViaAccessibility(_ text: String) {
         guard let frontmostApp = NSWorkspace.shared.frontmostApplication else {
-            print("No frontmost application")
+            Logger.textInjector.warning("No frontmost application")
             return
         }
         
@@ -86,7 +105,7 @@ class TextInjector: NSObject, ObservableObject {
         let result = AXUIElementCopyAttributeValue(appRef, kAXFocusedUIElementAttribute as CFString, &focusedElement)
         
         guard result == .success, let element = focusedElement else {
-            print("Failed to get focused element")
+            Logger.textInjector.warning("Failed to get focused element")
             return
         }
         

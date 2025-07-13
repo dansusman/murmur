@@ -103,7 +103,7 @@ class SettingsManager: ObservableObject {
                 try SMAppService.mainApp.unregister()
             }
         } catch {
-            print("Failed to update launch at login status: \(error)")
+            Logger.settings.error("Failed to update launch at login status: \(error)")
         }
     }
     
