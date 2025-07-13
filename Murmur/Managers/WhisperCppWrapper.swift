@@ -177,7 +177,14 @@ class WhisperCppWrapper: NSObject, ObservableObject {
             .trimmingCharacters(in: .whitespacesAndNewlines)
         
         // Remove ANSI escape codes (color formatting)
-        return removeAnsiEscapeCodes(joinedOutput)
+        let cleanedOutput = removeAnsiEscapeCodes(joinedOutput)
+        
+        // Handle BLANK_AUDIO token - treat as empty to trigger silent exit
+        if cleanedOutput.contains("[BLANK_AUDIO]") {
+            return ""
+        }
+        
+        return cleanedOutput
     }
     
     private func removeAnsiEscapeCodes(_ text: String) -> String {
