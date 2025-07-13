@@ -78,10 +78,6 @@ struct GeneralSettingsView: View {
                     }
                     .pickerStyle(MenuPickerStyle())
                 }
-                
-                Divider()
-                
-                BorderSettingsSection()
             }
             
             Spacer()
@@ -332,43 +328,6 @@ struct AdvancedSettingsView: View {
             Button("Cancel", role: .cancel) { }
         } message: {
             Text("Settings exported successfully. You can copy to clipboard or save to a file.")
-        }
-    }
-}
-
-struct BorderSettingsSection: View {
-    @EnvironmentObject var settingsManager: SettingsManager
-    
-    private var borderColorBinding: Binding<Color> {
-        Binding(
-            get: { Color(settingsManager.borderSettings.color) },
-            set: { settingsManager.borderSettings.color = NSColor($0) }
-        )
-    }
-    
-    var body: some View {
-        GroupBox("Recording Border") {
-            VStack(alignment: .leading, spacing: 12) {
-                Toggle("Show border around active window during recording", isOn: $settingsManager.borderSettings.isEnabled)
-                    .help("Display a colored border around the active window to indicate recording is in progress")
-                
-                if settingsManager.borderSettings.isEnabled {
-                    HStack {
-                        Text("Border color:")
-                        ColorPicker("", selection: borderColorBinding, supportsOpacity: false)
-                            .frame(width: 40, height: 30)
-                        Spacer()
-                    }
-                    
-                    HStack {
-                        Text("Border thickness:")
-                        Slider(value: $settingsManager.borderSettings.thickness, in: 1...10, step: 1)
-                        Text("\(Int(settingsManager.borderSettings.thickness))px")
-                            .frame(width: 30)
-                    }
-                    .help("Thickness of the border in pixels")
-                }
-            }
         }
     }
 }

@@ -9,7 +9,6 @@ class MenuBarManager: ObservableObject {
     private var whisperService: WhisperService?
     private var textInjector: TextInjector?
     private var settingsManager: SettingsManager?
-    private var indicatorManager: RecordingIndicatorManager?
     private var cancellables = Set<AnyCancellable>()
     
     @Published var isRecording = false
@@ -42,7 +41,6 @@ class MenuBarManager: ObservableObject {
         audioManager = AudioManager()
         whisperService = WhisperService()
         textInjector = TextInjector()
-        indicatorManager = RecordingIndicatorManager(borderSettings: settingsManager?.borderSettings ?? .default)
         
         audioManager?.delegate = self
         whisperService?.delegate = self
@@ -52,13 +50,6 @@ class MenuBarManager: ObservableObject {
             .sink { [weak self] keyCode in
                 Logger.menuBar.info("🔄 Hotkey changed to: \(keyCode)")
                 self?.updateHotkey(keyCode: keyCode)
-            }
-            .store(in: &cancellables)
-        
-        // Observe border settings changes
-        settingsManager?.$borderSettings
-            .sink { [weak self] borderSettings in
-                self?.indicatorManager?.updateSettings(borderSettings)
             }
             .store(in: &cancellables)
         
@@ -189,10 +180,6 @@ extension MenuBarManager: AudioManagerDelegate {
         DispatchQueue.main.async {
             self.isRecording = didStartRecording
             self.updateMenuBarIcon()
-            
-            if didStartRecording {
-                self.indicatorManager?.showRecordingBorder()
-            }
         }
     }
     
@@ -201,7 +188,6 @@ extension MenuBarManager: AudioManagerDelegate {
             self.isRecording = false
             self.isTranscribing = true
             self.updateMenuBarIcon()
-            self.indicatorManager?.hideRecordingBorder()
         }
         
         // Send audio to Whisper service
@@ -213,7 +199,6 @@ extension MenuBarManager: AudioManagerDelegate {
             self.isRecording = false
             self.isTranscribing = false
             self.updateMenuBarIcon()
-            self.indicatorManager?.hideRecordingBorder()
         }
         
         Logger.menuBar.error("Audio recording failed: \(error.localizedDescription)")

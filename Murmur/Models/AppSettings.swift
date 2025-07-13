@@ -8,7 +8,6 @@ struct AppSettings: Codable {
     var showNotifications: Bool
     var recordingTimeout: TimeInterval
     var language: String
-    var borderSettings: BorderSettings
     
     static let `default` = AppSettings(
         hotkeyCode: 63, // FN key
@@ -17,8 +16,7 @@ struct AppSettings: Codable {
         autoInsertText: true,
         showNotifications: true,
         recordingTimeout: 30.0,
-        language: "en",
-        borderSettings: .default
+        language: "en"
     )
 }
 

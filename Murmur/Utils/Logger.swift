@@ -94,5 +94,4 @@ extension Logger {
     static let whisper = Logger(component: "WhisperService")
     static let settings = Logger(component: "SettingsManager")
     static let app = Logger(component: "MurmurApp")
-    static let border = Logger(component: "RecordingIndicatorManager")
 }
