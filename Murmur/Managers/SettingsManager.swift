@@ -13,6 +13,7 @@ class SettingsManager: ObservableObject {
     @Published var showNotifications: Bool = true
     @Published var recordingTimeout: TimeInterval = 30.0
     @Published var language: String = "en"
+    @Published var borderSettings: BorderSettings = .default
     
     private let userDefaults = UserDefaults.standard
     private let launchAtLoginKey = "LaunchAtLogin"
@@ -22,6 +23,7 @@ class SettingsManager: ObservableObject {
     private let showNotificationsKey = "ShowNotifications"
     private let recordingTimeoutKey = "RecordingTimeout"
     private let languageKey = "Language"
+    private let borderSettingsKey = "BorderSettings"
     
     init() {
         loadSettings()
@@ -43,6 +45,12 @@ class SettingsManager: ObservableObject {
         if let modelTypeString = userDefaults.string(forKey: whisperModelTypeKey),
            let modelType = WhisperModelType(rawValue: modelTypeString) {
             whisperModelType = modelType
+        }
+        
+        // Load border settings
+        if let borderData = userDefaults.data(forKey: borderSettingsKey),
+           let loadedBorderSettings = try? JSONDecoder().decode(BorderSettings.self, from: borderData) {
+            borderSettings = loadedBorderSettings
         }
     }
     
@@ -91,6 +99,14 @@ class SettingsManager: ObservableObject {
                 self?.userDefaults.set(value, forKey: self?.languageKey ?? "")
             }
             .store(in: &cancellables)
+        
+        $borderSettings
+            .sink { [weak self] value in
+                if let data = try? JSONEncoder().encode(value) {
+                    self?.userDefaults.set(data, forKey: self?.borderSettingsKey ?? "")
+                }
+            }
+            .store(in: &cancellables)
     }
     
     private var cancellables = Set<AnyCancellable>()
@@ -115,6 +131,7 @@ class SettingsManager: ObservableObject {
         showNotifications = true
         recordingTimeout = 30.0
         language = "en"
+        borderSettings = .default
     }
     
     func exportSettings() -> [String: Any] {

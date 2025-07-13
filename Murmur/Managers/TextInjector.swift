@@ -21,7 +21,6 @@ class TextInjector: NSObject, ObservableObject {
             let trusted = AXIsProcessTrusted()
             self.hasAccessibilityPermission = trusted
             Logger.textInjector.debug("🔍 Polling accessibility permission: \(trusted ? "✅ GRANTED" : "❌ NOT GRANTED")")
-
             if !self.hasAccessibilityPermission {
                 self.pollAccessibilityPermission()
             } else {
