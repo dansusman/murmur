@@ -1,0 +1,20 @@
+{
+    "models": [
+        {
+            "name": "tiny",
+            "filename": "ggml-tiny.bin",
+            "size": "39MB",
+            "description": "Fastest model, good for real-time transcription",
+            "speed": "very fast",
+            "accuracy": "good"
+        },
+        {
+            "name": "base",
+            "filename": "ggml-base.bin",
+            "size": "142MB",
+            "description": "Balanced speed and accuracy",
+            "speed": "fast",
+            "accuracy": "better"
+        }
+    ]
+}

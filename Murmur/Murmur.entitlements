@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Audio Recording -->
+    <key>com.apple.security.device.audio-input</key>
+    <true/>
+    
+    <!-- Accessibility for text insertion -->
+    <key>com.apple.security.automation.apple-events</key>
+    <true/>
+    
+    <!-- Input monitoring for global hotkeys -->
+    <key>com.apple.security.automation.apple-events</key>
+    <true/>
+    
+    <!-- Network access for OpenAI API (if using cloud Whisper) -->
+    <key>com.apple.security.network.client</key>
+    <true/>
+    
+    <!-- File system access for temporary audio files -->
+    <key>com.apple.security.files.user-selected.read-write</key>
+    <true/>
+    
+    <!-- Hardened runtime entitlements -->
+    <key>com.apple.security.cs.allow-jit</key>
+    <false/>
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <false/>
+    <key>com.apple.security.cs.allow-dyld-environment-variables</key>
+    <false/>
+    <key>com.apple.security.cs.disable-library-validation</key>
+    <false/>
+    <key>com.apple.security.cs.disable-executable-page-protection</key>
+    <false/>
+    
+    <!-- App Sandbox (can be enabled for App Store distribution) -->
+    <!-- 
+    <key>com.apple.security.app-sandbox</key>
+    <true/>
+    -->
+</dict>
+</plist>

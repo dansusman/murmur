@@ -1,0 +1,13 @@
+# Whisper model binaries
+*.bin
+whisper.cpp/models/
+Murmur/Resources/Models/
+
+# Xcode
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+
+# macOS
+.DS_Store
