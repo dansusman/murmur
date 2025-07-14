@@ -3,7 +3,8 @@
     "allow": [
       "Bash(ls:*)",
       "Bash(xcodebuild:*)",
-      "Bash(log show:*)"
+      "Bash(log show:*)",
+      "Bash(find:*)"
     ],
     "deny": []
   }
