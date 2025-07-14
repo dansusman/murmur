@@ -47,13 +47,12 @@ class Logger {
         
         let timestamp = DateFormatter.logFormatter.string(from: Date())
         let fileName = URL(fileURLWithPath: file).lastPathComponent
-        let logMessage = "[\(component)] \(level.rawValue) \(message)"
+        let logMessage = "[\(component)] \(level.rawValue) \(fileName):\(line) \(message)"
         
         os_log("%{public}@", log: osLog, type: level.osLogType, logMessage)
-        
-        #if DEBUG
+#if DEBUG
         print("\(timestamp) \(logMessage)")
-        #endif
+#endif
     }
     
     func debug(_ message: String, file: String = #file, function: String = #function, line: Int = #line) {

@@ -10,9 +10,22 @@
 		544233CF2E23F5EE00B9AE14 /* Murmur.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Murmur.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		54745C882E24835B00433C0C /* Exceptions for "Murmur" folder in "Murmur" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Resources/Info.plist,
+			);
+			target = 544233CE2E23F5EE00B9AE14 /* Murmur */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		544233D12E23F5EE00B9AE14 /* Murmur */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				54745C882E24835B00433C0C /* Exceptions for "Murmur" folder in "Murmur" target */,
+			);
 			path = Murmur;
 			sourceTree = "<group>";
 		};

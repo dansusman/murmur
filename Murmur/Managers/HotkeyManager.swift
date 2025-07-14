@@ -50,11 +50,6 @@ class HotkeyManager: ObservableObject {
     }
     
     private func handleHotkeyEvent(event: EventRef) -> OSStatus {
-        guard event != nil else { 
-            Logger.hotkey.warning("handleHotkeyEvent: event is nil")
-            return OSStatus(eventNotHandledErr) 
-        }
-        
         let eventClass = GetEventClass(event)
         let eventKindValue = GetEventKind(event)
         
