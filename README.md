@@ -177,4 +177,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - OpenAI for the Whisper AI model
 - ggerganov for whisper.cpp implementation
-- Apple for the excellent macOS development frameworks
