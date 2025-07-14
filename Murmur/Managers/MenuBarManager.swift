@@ -241,7 +241,9 @@ extension MenuBarManager {
             return 
         }
         Logger.menuBar.debug("Calling audioManager.startRecording()")
-        floatingIndicatorManager?.showRecordingIndicator()
+        if settingsManager?.showFloatingIndicator == true {
+            floatingIndicatorManager?.showRecordingIndicator()
+        }
         audioManager?.startRecording()
     }
     
@@ -252,7 +254,9 @@ extension MenuBarManager {
             return 
         }
         Logger.menuBar.debug("Calling audioManager.stopRecording()")
-        floatingIndicatorManager?.hideRecordingIndicator()
+        if settingsManager?.showFloatingIndicator == true {
+            floatingIndicatorManager?.hideRecordingIndicator()
+        }
         audioManager?.stopRecording()
     }
 }

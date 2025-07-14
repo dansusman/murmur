@@ -54,6 +54,9 @@ struct GeneralSettingsView: View {
                 Toggle("Show notifications", isOn: $settingsManager.showNotifications)
                     .help("Show notification when transcription is complete")
                 
+                Toggle("Show floating recording indicator", isOn: $settingsManager.showFloatingIndicator)
+                    .help("Display a floating indicator when recording audio")
+                
                 HStack {
                     Text("Recording timeout:")
                     Slider(value: $settingsManager.recordingTimeout, in: 5...120, step: 5)

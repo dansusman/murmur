@@ -13,6 +13,7 @@ class SettingsManager: ObservableObject {
     @Published var showNotifications: Bool = true
     @Published var recordingTimeout: TimeInterval = 30.0
     @Published var language: String = "en"
+    @Published var showFloatingIndicator: Bool = true
     
     private let userDefaults = UserDefaults.standard
     private let launchAtLoginKey = "LaunchAtLogin"
@@ -22,6 +23,7 @@ class SettingsManager: ObservableObject {
     private let showNotificationsKey = "ShowNotifications"
     private let recordingTimeoutKey = "RecordingTimeout"
     private let languageKey = "Language"
+    private let showFloatingIndicatorKey = "ShowFloatingIndicator"
     
     init() {
         loadSettings()
@@ -38,6 +40,7 @@ class SettingsManager: ObservableObject {
         recordingTimeout = userDefaults.double(forKey: recordingTimeoutKey)
         if recordingTimeout == 0 { recordingTimeout = 30.0 }
         language = userDefaults.string(forKey: languageKey) ?? "en"
+        showFloatingIndicator = userDefaults.object(forKey: showFloatingIndicatorKey) as? Bool ?? true
         
         // Load whisper model type
         if let modelTypeString = userDefaults.string(forKey: whisperModelTypeKey),
@@ -91,6 +94,12 @@ class SettingsManager: ObservableObject {
                 self?.userDefaults.set(value, forKey: self?.languageKey ?? "")
             }
             .store(in: &cancellables)
+        
+        $showFloatingIndicator
+            .sink { [weak self] value in
+                self?.userDefaults.set(value, forKey: self?.showFloatingIndicatorKey ?? "")
+            }
+            .store(in: &cancellables)
     }
     
     private var cancellables = Set<AnyCancellable>()
@@ -115,6 +124,7 @@ class SettingsManager: ObservableObject {
         showNotifications = true
         recordingTimeout = 30.0
         language = "en"
+        showFloatingIndicator = true
     }
     
     func exportSettings() -> [String: Any] {
@@ -125,7 +135,8 @@ class SettingsManager: ObservableObject {
             "autoInsertText": autoInsertText,
             "showNotifications": showNotifications,
             "recordingTimeout": recordingTimeout,
-            "language": language
+            "language": language,
+            "showFloatingIndicator": showFloatingIndicator
         ]
     }
     
@@ -151,6 +162,9 @@ class SettingsManager: ObservableObject {
         }
         if let value = settings["language"] as? String {
             language = value
+        }
+        if let value = settings["showFloatingIndicator"] as? Bool {
+            showFloatingIndicator = value
         }
     }
     
