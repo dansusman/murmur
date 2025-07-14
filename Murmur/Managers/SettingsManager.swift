@@ -10,8 +10,6 @@ class SettingsManager: ObservableObject {
     @Published var launchAtLogin: Bool = false
     @Published var whisperModelType: WhisperModelType = .tiny
     @Published var autoInsertText: Bool = true
-    @Published var showNotifications: Bool = true
-    @Published var recordingTimeout: TimeInterval = 30.0
     @Published var language: String = "en"
     @Published var showFloatingIndicator: Bool = true
     
@@ -20,8 +18,6 @@ class SettingsManager: ObservableObject {
     private let hotkeyCodeKey = "HotkeyCode"
     private let whisperModelTypeKey = "WhisperModelType"
     private let autoInsertTextKey = "AutoInsertText"
-    private let showNotificationsKey = "ShowNotifications"
-    private let recordingTimeoutKey = "RecordingTimeout"
     private let languageKey = "Language"
     private let showFloatingIndicatorKey = "ShowFloatingIndicator"
     
@@ -36,9 +32,6 @@ class SettingsManager: ObservableObject {
         
         launchAtLogin = userDefaults.bool(forKey: launchAtLoginKey)
         autoInsertText = userDefaults.object(forKey: autoInsertTextKey) as? Bool ?? true
-        showNotifications = userDefaults.object(forKey: showNotificationsKey) as? Bool ?? true
-        recordingTimeout = userDefaults.double(forKey: recordingTimeoutKey)
-        if recordingTimeout == 0 { recordingTimeout = 30.0 }
         language = userDefaults.string(forKey: languageKey) ?? "en"
         showFloatingIndicator = userDefaults.object(forKey: showFloatingIndicatorKey) as? Bool ?? true
         
@@ -77,18 +70,6 @@ class SettingsManager: ObservableObject {
             }
             .store(in: &cancellables)
         
-        $showNotifications
-            .sink { [weak self] value in
-                self?.userDefaults.set(value, forKey: self?.showNotificationsKey ?? "")
-            }
-            .store(in: &cancellables)
-        
-        $recordingTimeout
-            .sink { [weak self] value in
-                self?.userDefaults.set(value, forKey: self?.recordingTimeoutKey ?? "")
-            }
-            .store(in: &cancellables)
-        
         $language
             .sink { [weak self] value in
                 self?.userDefaults.set(value, forKey: self?.languageKey ?? "")
@@ -121,8 +102,6 @@ class SettingsManager: ObservableObject {
         launchAtLogin = false
         whisperModelType = .tiny
         autoInsertText = true
-        showNotifications = true
-        recordingTimeout = 30.0
         language = "en"
         showFloatingIndicator = true
     }
@@ -133,8 +112,6 @@ class SettingsManager: ObservableObject {
             "launchAtLogin": launchAtLogin,
             "whisperModelType": whisperModelType.rawValue,
             "autoInsertText": autoInsertText,
-            "showNotifications": showNotifications,
-            "recordingTimeout": recordingTimeout,
             "language": language,
             "showFloatingIndicator": showFloatingIndicator
         ]
@@ -153,12 +130,6 @@ class SettingsManager: ObservableObject {
         }
         if let value = settings["autoInsertText"] as? Bool {
             autoInsertText = value
-        }
-        if let value = settings["showNotifications"] as? Bool {
-            showNotifications = value
-        }
-        if let value = settings["recordingTimeout"] as? TimeInterval {
-            recordingTimeout = value
         }
         if let value = settings["language"] as? String {
             language = value

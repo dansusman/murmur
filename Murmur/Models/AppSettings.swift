@@ -5,8 +5,6 @@ struct AppSettings: Codable {
     var launchAtLogin: Bool
     var whisperModelType: WhisperModelType
     var autoInsertText: Bool
-    var showNotifications: Bool
-    var recordingTimeout: TimeInterval
     var language: String
     var showFloatingIndicator: Bool
     
@@ -15,8 +13,6 @@ struct AppSettings: Codable {
         launchAtLogin: false,
         whisperModelType: .tiny,
         autoInsertText: true,
-        showNotifications: true,
-        recordingTimeout: 30.0,
         language: "en",
         showFloatingIndicator: true
     )

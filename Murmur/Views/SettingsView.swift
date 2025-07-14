@@ -51,19 +51,8 @@ struct GeneralSettingsView: View {
                 Toggle("Automatically insert transcribed text", isOn: $settingsManager.autoInsertText)
                     .help("When enabled, transcribed text will be automatically inserted into the active text field")
                 
-                Toggle("Show notifications", isOn: $settingsManager.showNotifications)
-                    .help("Show notification when transcription is complete")
-                
                 Toggle("Show floating recording indicator", isOn: $settingsManager.showFloatingIndicator)
                     .help("Display a floating indicator when recording audio")
-                
-                HStack {
-                    Text("Recording timeout:")
-                    Slider(value: $settingsManager.recordingTimeout, in: 5...120, step: 5)
-                    Text("\(Int(settingsManager.recordingTimeout))s")
-                        .frame(width: 40)
-                }
-                .help("Maximum recording duration in seconds")
                 
                 HStack {
                     Text("Language:")
