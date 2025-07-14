@@ -7,6 +7,7 @@ A lightweight macOS menu bar application for AI-powered voice transcription. Hol
 - **Global Hotkey Recording**: Hold FN key (or customize) to record audio
 - **AI Transcription**: Uses Whisper AI model for accurate speech-to-text
 - **Automatic Text Insertion**: Transcribed text is automatically pasted into active text fields
+- **Floating Recording Indicator**: Visual feedback with a floating indicator during recording
 - **Menu Bar Interface**: Lightweight menu bar app with easy access to settings
 - **Launch at Login**: Option to start automatically when macOS boots
 - **Privacy First**: Local processing with Whisper (no cloud required)
@@ -53,6 +54,11 @@ The app requires these permissions to function:
 - Recommended alternatives: F13-F20 (don't interfere with other shortcuts)
 - Avoid Command, Option, Control keys
 
+### Visual Feedback
+
+- **Floating Recording Indicator**: Toggle the floating indicator that appears during recording
+- Provides visual confirmation that recording is active
+
 ### Whisper Models
 
 Choose between different Whisper models based on your needs:
@@ -78,19 +84,31 @@ Murmur/
 │   ├── HotkeyManager.swift         # Global hotkey handling
 │   ├── AudioManager.swift          # Audio recording
 │   ├── WhisperService.swift        # AI transcription
+│   ├── WhisperCppWrapper.swift     # Local Whisper integration
 │   ├── TextInjector.swift          # Text insertion
-│   └── SettingsManager.swift       # User preferences
+│   ├── SettingsManager.swift       # User preferences
+│   └── FloatingIndicatorManager.swift # Floating recording indicator
 ├── Views/
 │   ├── MenuBarView.swift           # Menu bar dropdown
 │   ├── SettingsView.swift          # Settings panel
-│   └── HotkeyPickerView.swift      # Hotkey selection UI
+│   ├── HotkeyPickerView.swift      # Hotkey selection UI
+│   ├── FloatingRecordingIndicator.swift # Recording indicator UI
+│   └── FloatingRecordingWindow.swift # Recording window container
 ├── Models/
 │   ├── AppSettings.swift           # Settings data model
 │   └── TranscriptionState.swift    # App state management
 ├── Extensions/
 │   └── KeyCode+Extensions.swift    # Keyboard handling utilities
+├── Utils/
+│   └── Logger.swift                # Logging utilities
 ├── Resources/
-│   └── Info.plist                  # App metadata & permissions
+│   ├── Info.plist                  # App metadata & permissions
+│   ├── Binaries/
+│   │   └── whisper                 # Local Whisper binary
+│   └── Models/
+│       ├── ggml-base.bin           # Whisper base model
+│       ├── ggml-tiny.bin           # Whisper tiny model
+│       └── model_info.json         # Model metadata
 └── Entitlements/
     └── Murmur.entitlements        # Security entitlements
 ```
