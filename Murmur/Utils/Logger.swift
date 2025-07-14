@@ -42,6 +42,7 @@ class Logger {
         return messageIndex >= currentIndex
     }
     
+
     private func log(_ level: LogLevel, _ message: String, file: String = #file, function: String = #function, line: Int = #line) {
         guard shouldLog(level) else { return }
         

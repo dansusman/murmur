@@ -9,6 +9,7 @@ class MenuBarManager: ObservableObject {
     private var whisperService: WhisperService?
     private var textInjector: TextInjector?
     private var settingsManager: SettingsManager?
+    private var floatingIndicatorManager: FloatingIndicatorManager?
     private var cancellables = Set<AnyCancellable>()
     
     @Published var isRecording = false
@@ -41,6 +42,7 @@ class MenuBarManager: ObservableObject {
         audioManager = AudioManager()
         whisperService = WhisperService()
         textInjector = TextInjector()
+        floatingIndicatorManager = FloatingIndicatorManager()
         
         audioManager?.delegate = self
         whisperService?.delegate = self
@@ -239,6 +241,7 @@ extension MenuBarManager {
             return 
         }
         Logger.menuBar.debug("Calling audioManager.startRecording()")
+        floatingIndicatorManager?.showRecordingIndicator()
         audioManager?.startRecording()
     }
     
@@ -249,6 +252,7 @@ extension MenuBarManager {
             return 
         }
         Logger.menuBar.debug("Calling audioManager.stopRecording()")
+        floatingIndicatorManager?.hideRecordingIndicator()
         audioManager?.stopRecording()
     }
 }
