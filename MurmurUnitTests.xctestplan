@@ -1,0 +1,46 @@
+{
+  "configurations" : [
+    {
+      "id" : "0AD31BAF-18E2-4C9E-B197-78C3A856E927",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:Murmur.xcodeproj",
+      "identifier" : "544233CE2E23F5EE00B9AE14",
+      "name" : "Murmur"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "skippedTests" : {
+        "suites" : [
+          {
+            "name" : "AudioManagerTests",
+            "testFunctions" : [
+              "testStartRecordingWithoutPermissionFails()",
+              "testStopRecordingWhenNotRecording()"
+            ]
+          },
+          {
+            "name" : "AudioProcessingTests"
+          },
+          {
+            "name" : "TranscriptionSessionIntegrationTests"
+          }
+        ]
+      },
+      "target" : {
+        "containerPath" : "container:Murmur.xcodeproj",
+        "identifier" : "54780D6A2E24960100539EB4",
+        "name" : "MurmurTests"
+      }
+    }
+  ],
+  "version" : 2
+}

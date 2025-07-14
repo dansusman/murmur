@@ -6,8 +6,20 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		54780D6F2E24960100539EB4 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 544233C72E23F5EE00B9AE14 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 544233CE2E23F5EE00B9AE14;
+			remoteInfo = Murmur;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		544233CF2E23F5EE00B9AE14 /* Murmur.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Murmur.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		54780D6B2E24960100539EB4 /* MurmurTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MurmurTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		54780D932E24999200539EB4 /* MurmurUnitTests.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = MurmurUnitTests.xctestplan; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -29,10 +41,22 @@
 			path = Murmur;
 			sourceTree = "<group>";
 		};
+		54780D6C2E24960100539EB4 /* MurmurTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MurmurTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		544233CC2E23F5EE00B9AE14 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		54780D682E24960100539EB4 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -45,7 +69,9 @@
 		544233C62E23F5EE00B9AE14 = {
 			isa = PBXGroup;
 			children = (
+				54780D932E24999200539EB4 /* MurmurUnitTests.xctestplan */,
 				544233D12E23F5EE00B9AE14 /* Murmur */,
+				54780D6C2E24960100539EB4 /* MurmurTests */,
 				544233D02E23F5EE00B9AE14 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -54,6 +80,7 @@
 			isa = PBXGroup;
 			children = (
 				544233CF2E23F5EE00B9AE14 /* Murmur.app */,
+				54780D6B2E24960100539EB4 /* MurmurTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -83,6 +110,29 @@
 			productReference = 544233CF2E23F5EE00B9AE14 /* Murmur.app */;
 			productType = "com.apple.product-type.application";
 		};
+		54780D6A2E24960100539EB4 /* MurmurTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 54780D732E24960100539EB4 /* Build configuration list for PBXNativeTarget "MurmurTests" */;
+			buildPhases = (
+				54780D672E24960100539EB4 /* Sources */,
+				54780D682E24960100539EB4 /* Frameworks */,
+				54780D692E24960100539EB4 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				54780D702E24960100539EB4 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				54780D6C2E24960100539EB4 /* MurmurTests */,
+			);
+			name = MurmurTests;
+			packageProductDependencies = (
+			);
+			productName = MurmurTests;
+			productReference = 54780D6B2E24960100539EB4 /* MurmurTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -95,6 +145,10 @@
 				TargetAttributes = {
 					544233CE2E23F5EE00B9AE14 = {
 						CreatedOnToolsVersion = 16.2;
+					};
+					54780D6A2E24960100539EB4 = {
+						CreatedOnToolsVersion = 16.2;
+						TestTargetID = 544233CE2E23F5EE00B9AE14;
 					};
 				};
 			};
@@ -113,12 +167,20 @@
 			projectRoot = "";
 			targets = (
 				544233CE2E23F5EE00B9AE14 /* Murmur */,
+				54780D6A2E24960100539EB4 /* MurmurTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		544233CD2E23F5EE00B9AE14 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		54780D692E24960100539EB4 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -135,7 +197,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		54780D672E24960100539EB4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		54780D702E24960100539EB4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 544233CE2E23F5EE00B9AE14 /* Murmur */;
+			targetProxy = 54780D6F2E24960100539EB4 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		544233DC2E23F5EF00B9AE14 /* Debug */ = {
@@ -324,6 +401,42 @@
 			};
 			name = Release;
 		};
+		54780D712E24960100539EB4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = K6LPZ5HGV3;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.dansusman.MurmurTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Murmur.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Murmur";
+			};
+			name = Debug;
+		};
+		54780D722E24960100539EB4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = K6LPZ5HGV3;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.2;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.dansusman.MurmurTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Murmur.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Murmur";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -341,6 +454,15 @@
 			buildConfigurations = (
 				544233DF2E23F5EF00B9AE14 /* Debug */,
 				544233E02E23F5EF00B9AE14 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		54780D732E24960100539EB4 /* Build configuration list for PBXNativeTarget "MurmurTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				54780D712E24960100539EB4 /* Debug */,
+				54780D722E24960100539EB4 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
