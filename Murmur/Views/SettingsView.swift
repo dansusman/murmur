@@ -55,7 +55,6 @@ struct GeneralSettingsView: View {
                     .help("Display a floating indicator when recording audio")
                 
                 HStack {
-                    Text("Language:")
                     Picker("Language", selection: $settingsManager.language) {
                         Text("Auto-detect").tag("auto")
                         Text("English").tag("en")
