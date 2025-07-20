@@ -5,6 +5,9 @@ A lightweight macOS menu bar application for AI-powered voice transcription. Hol
 ## Features
 
 - **Global Hotkey Recording**: Hold FN key (or customize) to record audio
+- **Meeting Mode**: Capture both microphone and system audio simultaneously with ScreenCaptureKit
+- **Dual Hotkey System**: Normal recording (FN) and meeting mode toggle (F17)
+- **Chronological Audio Mixing**: Synchronized playback of mixed microphone and system audio
 - **AI Transcription**: Uses Whisper AI model for accurate speech-to-text
 - **Automatic Text Insertion**: Transcribed text is automatically pasted into active text fields
 - **Floating Recording Indicator**: Visual feedback with a floating indicator during recording
@@ -15,8 +18,9 @@ A lightweight macOS menu bar application for AI-powered voice transcription. Hol
 
 ## Requirements
 
-- macOS 12.0 or later
+- macOS 15.0 (Sequoia) or later
 - Microphone access permission
+- Screen recording permission (required for meeting mode system audio capture)
 - Accessibility permissions (for text insertion)
 - Input monitoring permission (for global hotkeys)
 
@@ -39,18 +43,29 @@ The app requires these permissions to function:
 
 ## Usage
 
+### Normal Mode Recording
+
 1. Launch Murmur - it will appear in your menu bar
 2. Hold the hotkey (FN key by default) to start recording
 3. Speak your message
 4. Release the hotkey to stop recording and start transcription
 5. The transcribed text will automatically be pasted into the active text field
 
+### Meeting Mode Recording
+
+1. Press the meeting mode toggle hotkey (F17 by default) to start recording both microphone and system audio
+2. Speak and continue with your meeting/call - both your voice and system audio will be captured
+3. Press the meeting mode hotkey again to stop recording
+4. Audio streams are mixed chronologically and transcribed together
+5. The complete transcription will be pasted into the active text field
+
 ## Configuration
 
 ### Hotkey Settings
 
 - Access settings through the menu bar icon
-- Default hotkey is FN key
+- **Normal Recording**: Default hotkey is FN key (hold to record)
+- **Meeting Mode**: Default hotkey is F17 key (toggle on/off)
 - Recommended alternatives: F13-F20 (don't interfere with other shortcuts)
 - Avoid Command, Option, Control keys
 
@@ -83,6 +98,7 @@ Murmur/
 │   ├── MenuBarManager.swift        # Menu bar status item
 │   ├── HotkeyManager.swift         # Global hotkey handling
 │   ├── AudioManager.swift          # Audio recording
+│   ├── ScreenAudioRecorder.swift   # System audio capture for meeting mode
 │   ├── WhisperService.swift        # AI transcription
 │   ├── WhisperCppWrapper.swift     # Local Whisper integration
 │   ├── TextInjector.swift          # Text insertion
@@ -128,6 +144,7 @@ The app uses only built-in macOS frameworks:
 - **SwiftUI**: Modern UI framework
 - **AppKit**: Menu bar integration
 - **AVFoundation**: Audio recording
+- **ScreenCaptureKit**: System audio capture for meeting mode
 - **Carbon**: Global hotkey registration
 - **Accessibility**: Text insertion into other apps
 
