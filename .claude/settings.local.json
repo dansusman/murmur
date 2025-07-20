@@ -4,7 +4,9 @@
       "Bash(ls:*)",
       "Bash(xcodebuild:*)",
       "Bash(log show:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(ffmpeg:*)",
+      "Bash(git add:*)"
     ],
     "deny": []
   }

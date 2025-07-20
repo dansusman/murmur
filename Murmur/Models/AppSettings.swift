@@ -2,19 +2,23 @@ import Foundation
 
 struct AppSettings: Codable {
     var hotkeyCode: UInt32
+    var meetingModeHotkeyCode: UInt32
     var launchAtLogin: Bool
     var whisperModelType: WhisperModelType
     var autoInsertText: Bool
     var language: String
     var showFloatingIndicator: Bool
+    var enableMeetingMode: Bool
     
     static let `default` = AppSettings(
         hotkeyCode: 63, // FN key
+        meetingModeHotkeyCode: 64, // F17 key
         launchAtLogin: false,
         whisperModelType: .tiny,
         autoInsertText: true,
         language: "en",
-        showFloatingIndicator: true
+        showFloatingIndicator: true,
+        enableMeetingMode: false
     )
 }
 

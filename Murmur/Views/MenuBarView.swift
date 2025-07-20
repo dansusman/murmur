@@ -16,9 +16,22 @@ struct MenuBarView: View {
                 }
                 
                 if case .recording = transcriptionSession.state {
-                    Text("Duration: \(formatDuration(transcriptionSession.recordingDuration))")
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Duration: \(formatDuration(transcriptionSession.recordingDuration))")
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                        
+                        if transcriptionSession.recordingMode == .meetingMode {
+                            HStack {
+                                Image(systemName: "mic.and.signal.meter")
+                                    .font(.system(size: 9))
+                                    .foregroundColor(.blue)
+                                Text("Meeting Mode")
+                                    .font(.system(size: 9))
+                                    .foregroundColor(.blue)
+                            }
+                        }
+                    }
                 }
             }
             .padding(.horizontal, 12)

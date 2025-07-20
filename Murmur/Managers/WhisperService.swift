@@ -18,7 +18,7 @@ class WhisperService: NSObject, ObservableObject {
             .assign(to: &$isTranscribing)
     }
     
-    func transcribe(audioData: Data) {
+    func transcribe(audioData: Data, includeTimestamps: Bool = false) {
         guard !audioData.isEmpty else {
             delegate?.whisperService(self, didFailWithError: WhisperServiceError.noAudioData)
             return
@@ -46,7 +46,8 @@ class WhisperService: NSObject, ObservableObject {
                 let transcription = try await whisperWrapper.transcribe(
                     audioData: audioData,
                     using: modelType,
-                    language: language
+                    language: language,
+                    includeTimestamps: includeTimestamps
                 )
                 
                 DispatchQueue.main.async {

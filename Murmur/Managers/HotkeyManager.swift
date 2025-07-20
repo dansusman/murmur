@@ -5,10 +5,13 @@ import AppKit
 class HotkeyManager: ObservableObject {
     weak var delegate: HotkeyManagerDelegate?
     
-    private var hotKeyRef: EventHotKeyRef?
+    private var normalHotKeyRef: EventHotKeyRef?
+    private var meetingModeHotKeyRef: EventHotKeyRef?
     private var eventHandler: EventHandlerRef?
-    private var currentKeyCode: UInt32 = 63 // FN key default
-    private var isHotkeyPressed = false
+    private var currentNormalKeyCode: UInt32 = 63 // FN key default
+    private var currentMeetingModeKeyCode: UInt32 = 64 // F17 key default
+    private var isNormalHotkeyPressed = false
+    private var isMeetingModeRecording = false
     
     init() {
         Logger.hotkey.info("🚀 Initializing HotkeyManager")
@@ -16,7 +19,7 @@ class HotkeyManager: ObservableObject {
     }
     
     deinit {
-        unregisterHotkey()
+        unregisterAllHotkeys()
         if let eventHandler = eventHandler {
             RemoveEventHandler(eventHandler)
         }
@@ -53,72 +56,144 @@ class HotkeyManager: ObservableObject {
         let eventClass = GetEventClass(event)
         let eventKindValue = GetEventKind(event)
         
-        Logger.hotkey.debug("handleHotkeyEvent: eventClass=\(eventClass), eventKind=\(eventKindValue)")
+        // Get the hotkey ID to determine which hotkey was triggered
+        var hotKeyID = EventHotKeyID()
+        let getIDResult = GetEventParameter(event, EventParamName(kEventParamDirectObject), EventParamType(typeEventHotKeyID), nil, MemoryLayout<EventHotKeyID>.size, nil, &hotKeyID)
         
-        if eventClass == OSType(kEventClassKeyboard) {
-            if eventKindValue == OSType(kEventHotKeyPressed) && !isHotkeyPressed {
-                isHotkeyPressed = true
-                let keyName = Self.getKeyName(for: currentKeyCode) ?? "Unknown"
-                Logger.hotkey.info("🔥 Hotkey pressed: \(keyName) (code: \(currentKeyCode))")
-                Logger.hotkey.debug("Calling delegate.hotkeyPressed()")
-                DispatchQueue.main.async {
-                    self.delegate?.hotkeyPressed()
-                }
-            } else if eventKindValue == OSType(kEventHotKeyReleased) && isHotkeyPressed {
-                isHotkeyPressed = false
-                let keyName = Self.getKeyName(for: currentKeyCode) ?? "Unknown"
-                Logger.hotkey.info("🔥 Hotkey released: \(keyName) (code: \(currentKeyCode))")
-                Logger.hotkey.debug("Calling delegate.hotkeyReleased()")
-                DispatchQueue.main.async {
-                    self.delegate?.hotkeyReleased()
-                }
-            } else {
-                Logger.hotkey.debug("Event ignored - eventKind=\(eventKindValue), isHotkeyPressed=\(isHotkeyPressed)")
+        Logger.hotkey.debug("handleHotkeyEvent: eventClass=\(eventClass), eventKind=\(eventKindValue), hotKeyID=\(hotKeyID.id)")
+        
+        if eventClass == OSType(kEventClassKeyboard) && getIDResult == noErr {
+            if hotKeyID.id == 1 { // Normal hotkey
+                handleNormalHotkeyEvent(eventKind: eventKindValue)
+            } else if hotKeyID.id == 2 { // Meeting mode hotkey
+                handleMeetingModeHotkeyEvent(eventKind: eventKindValue)
             }
         } else {
-            Logger.hotkey.debug("Event ignored - not keyboard event (eventClass=\(eventClass))")
+            Logger.hotkey.debug("Event ignored - not keyboard event or failed to get hotkey ID")
         }
         
         return noErr
     }
     
-    func registerHotkey(keyCode: UInt32) {
-        // Unregister previous hotkey
-        unregisterHotkey()
+    private func handleNormalHotkeyEvent(eventKind: UInt32) {
+        if eventKind == OSType(kEventHotKeyPressed) && !isNormalHotkeyPressed {
+            isNormalHotkeyPressed = true
+            let keyName = Self.getKeyName(for: currentNormalKeyCode) ?? "Unknown"
+            Logger.hotkey.info("🔥 Normal hotkey pressed: \(keyName) (code: \(currentNormalKeyCode))")
+            DispatchQueue.main.async {
+                self.delegate?.normalHotkeyPressed()
+            }
+        } else if eventKind == OSType(kEventHotKeyReleased) && isNormalHotkeyPressed {
+            isNormalHotkeyPressed = false
+            let keyName = Self.getKeyName(for: currentNormalKeyCode) ?? "Unknown"
+            Logger.hotkey.info("🔥 Normal hotkey released: \(keyName) (code: \(currentNormalKeyCode))")
+            DispatchQueue.main.async {
+                self.delegate?.normalHotkeyReleased()
+            }
+        }
+    }
+    
+    private func handleMeetingModeHotkeyEvent(eventKind: UInt32) {
+        if eventKind == OSType(kEventHotKeyPressed) {
+            let keyName = Self.getKeyName(for: currentMeetingModeKeyCode) ?? "Unknown"
+            Logger.hotkey.info("🔥 Meeting mode hotkey pressed: \(keyName) (code: \(currentMeetingModeKeyCode))")
+            
+            // Toggle meeting mode recording
+            isMeetingModeRecording.toggle()
+            
+            DispatchQueue.main.async {
+                if self.isMeetingModeRecording {
+                    self.delegate?.meetingModeHotkeyStartRecording()
+                } else {
+                    self.delegate?.meetingModeHotkeyStopRecording()
+                }
+            }
+        }
+    }
+    
+    func registerNormalHotkey(keyCode: UInt32) {
+        // Unregister previous normal hotkey
+        unregisterNormalHotkey()
         
-        currentKeyCode = keyCode
+        currentNormalKeyCode = keyCode
         let keyName = Self.getKeyName(for: keyCode) ?? "Unknown"
         
-        Logger.hotkey.info("🔧 Registering hotkey: \(keyName) (code: \(keyCode))")
+        Logger.hotkey.info("🔧 Registering normal hotkey: \(keyName) (code: \(keyCode))")
         
-        // Register new hotkey
-        let hotKeyID = EventHotKeyID(signature: OSType(0x4D554D52), id: UInt32(1)) // 'MUMR'
+        let hotKeyID = EventHotKeyID(signature: OSType(0x4D554D52), id: UInt32(1)) // 'MUMR' ID 1
         
         let status = RegisterEventHotKey(
-            currentKeyCode,
-            0, // No modifiers needed for FN key
+            currentNormalKeyCode,
+            0, // No modifiers needed
             hotKeyID,
             GetEventDispatcherTarget(),
             0,
-            &hotKeyRef
+            &normalHotKeyRef
         )
         
         if status != noErr {
-            Logger.hotkey.error("Failed to register hotkey \(keyName) (code: \(keyCode)), status: \(status)")
+            Logger.hotkey.error("Failed to register normal hotkey \(keyName) (code: \(keyCode)), status: \(status)")
         } else {
-            Logger.hotkey.success("Successfully registered hotkey \(keyName) (code: \(keyCode))")
+            Logger.hotkey.success("Successfully registered normal hotkey \(keyName) (code: \(keyCode))")
         }
     }
     
-    private func unregisterHotkey() {
-        if let hotKeyRef = hotKeyRef {
-            UnregisterEventHotKey(hotKeyRef)
-            self.hotKeyRef = nil
+    func registerMeetingModeHotkey(keyCode: UInt32) {
+        // Unregister previous meeting mode hotkey
+        unregisterMeetingModeHotkey()
+        
+        currentMeetingModeKeyCode = keyCode
+        let keyName = Self.getKeyName(for: keyCode) ?? "Unknown"
+        
+        Logger.hotkey.info("🔧 Registering meeting mode hotkey: \(keyName) (code: \(keyCode))")
+        
+        let hotKeyID = EventHotKeyID(signature: OSType(0x4D554D52), id: UInt32(2)) // 'MUMR' ID 2
+        
+        let status = RegisterEventHotKey(
+            currentMeetingModeKeyCode,
+            0, // No modifiers needed
+            hotKeyID,
+            GetEventDispatcherTarget(),
+            0,
+            &meetingModeHotKeyRef
+        )
+        
+        if status != noErr {
+            Logger.hotkey.error("Failed to register meeting mode hotkey \(keyName) (code: \(keyCode)), status: \(status)")
+        } else {
+            Logger.hotkey.success("Successfully registered meeting mode hotkey \(keyName) (code: \(keyCode))")
         }
     }
     
-    func updateHotkey(keyCode: UInt32) {
-        registerHotkey(keyCode: keyCode)
+    private func unregisterNormalHotkey() {
+        if let normalHotKeyRef = normalHotKeyRef {
+            UnregisterEventHotKey(normalHotKeyRef)
+            self.normalHotKeyRef = nil
+        }
+    }
+    
+    private func unregisterMeetingModeHotkey() {
+        if let meetingModeHotKeyRef = meetingModeHotKeyRef {
+            UnregisterEventHotKey(meetingModeHotKeyRef)
+            self.meetingModeHotKeyRef = nil
+        }
+    }
+    
+    private func unregisterAllHotkeys() {
+        unregisterNormalHotkey()
+        unregisterMeetingModeHotkey()
+    }
+    
+    func updateNormalHotkey(keyCode: UInt32) {
+        registerNormalHotkey(keyCode: keyCode)
+    }
+    
+    func updateMeetingModeHotkey(keyCode: UInt32) {
+        registerMeetingModeHotkey(keyCode: keyCode)
+    }
+    
+    func resetMeetingModeRecordingState() {
+        isMeetingModeRecording = false
     }
     
     // Helper method to get key code from key event

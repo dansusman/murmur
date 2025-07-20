@@ -7,19 +7,23 @@ class SettingsManager: ObservableObject {
     static let shared = SettingsManager()
     
     @Published var hotkeyCode: UInt32 = 63 // FN key default
+    @Published var meetingModeHotkeyCode: UInt32 = 64 // F17 key default
     @Published var launchAtLogin: Bool = false
     @Published var whisperModelType: WhisperModelType = .tiny
     @Published var autoInsertText: Bool = true
     @Published var language: String = "en"
     @Published var showFloatingIndicator: Bool = true
+    @Published var enableMeetingMode: Bool = false
     
     private let userDefaults = UserDefaults.standard
     private let launchAtLoginKey = "LaunchAtLogin"
     private let hotkeyCodeKey = "HotkeyCode"
+    private let meetingModeHotkeyCodeKey = "MeetingModeHotkeyCode"
     private let whisperModelTypeKey = "WhisperModelType"
     private let autoInsertTextKey = "AutoInsertText"
     private let languageKey = "Language"
     private let showFloatingIndicatorKey = "ShowFloatingIndicator"
+    private let enableMeetingModeKey = "EnableMeetingMode"
     
     init() {
         loadSettings()
@@ -30,10 +34,14 @@ class SettingsManager: ObservableObject {
         hotkeyCode = UInt32(userDefaults.integer(forKey: hotkeyCodeKey))
         if hotkeyCode == 0 { hotkeyCode = 63 } // Default to FN key
         
+        meetingModeHotkeyCode = UInt32(userDefaults.integer(forKey: meetingModeHotkeyCodeKey))
+        if meetingModeHotkeyCode == 0 { meetingModeHotkeyCode = 64 } // Default to F17 key
+        
         launchAtLogin = userDefaults.bool(forKey: launchAtLoginKey)
         autoInsertText = userDefaults.object(forKey: autoInsertTextKey) as? Bool ?? true
         language = userDefaults.string(forKey: languageKey) ?? "en"
         showFloatingIndicator = userDefaults.object(forKey: showFloatingIndicatorKey) as? Bool ?? true
+        enableMeetingMode = userDefaults.object(forKey: enableMeetingModeKey) as? Bool ?? false
         
         // Load whisper model type
         if let modelTypeString = userDefaults.string(forKey: whisperModelTypeKey),
@@ -47,6 +55,12 @@ class SettingsManager: ObservableObject {
         $hotkeyCode
             .sink { [weak self] value in
                 self?.userDefaults.set(Int(value), forKey: self?.hotkeyCodeKey ?? "")
+            }
+            .store(in: &cancellables)
+        
+        $meetingModeHotkeyCode
+            .sink { [weak self] value in
+                self?.userDefaults.set(Int(value), forKey: self?.meetingModeHotkeyCodeKey ?? "")
             }
             .store(in: &cancellables)
         
@@ -81,6 +95,12 @@ class SettingsManager: ObservableObject {
                 self?.userDefaults.set(value, forKey: self?.showFloatingIndicatorKey ?? "")
             }
             .store(in: &cancellables)
+        
+        $enableMeetingMode
+            .sink { [weak self] value in
+                self?.userDefaults.set(value, forKey: self?.enableMeetingModeKey ?? "")
+            }
+            .store(in: &cancellables)
     }
     
     private var cancellables = Set<AnyCancellable>()
@@ -99,27 +119,34 @@ class SettingsManager: ObservableObject {
     
     func resetToDefaults() {
         hotkeyCode = 63
+        meetingModeHotkeyCode = 64
         launchAtLogin = false
         whisperModelType = .tiny
         autoInsertText = true
         language = "en"
         showFloatingIndicator = true
+        enableMeetingMode = false
     }
     
     func exportSettings() -> [String: Any] {
         return [
             "hotkeyCode": hotkeyCode,
+            "meetingModeHotkeyCode": meetingModeHotkeyCode,
             "launchAtLogin": launchAtLogin,
             "whisperModelType": whisperModelType.rawValue,
             "autoInsertText": autoInsertText,
             "language": language,
-            "showFloatingIndicator": showFloatingIndicator
+            "showFloatingIndicator": showFloatingIndicator,
+            "enableMeetingMode": enableMeetingMode
         ]
     }
     
     func importSettings(_ settings: [String: Any]) {
         if let value = settings["hotkeyCode"] as? UInt32 {
             hotkeyCode = value
+        }
+        if let value = settings["meetingModeHotkeyCode"] as? UInt32 {
+            meetingModeHotkeyCode = value
         }
         if let value = settings["launchAtLogin"] as? Bool {
             launchAtLogin = value
@@ -137,10 +164,17 @@ class SettingsManager: ObservableObject {
         if let value = settings["showFloatingIndicator"] as? Bool {
             showFloatingIndicator = value
         }
+        if let value = settings["enableMeetingMode"] as? Bool {
+            enableMeetingMode = value
+        }
     }
     
     func getHotkeyDisplayName() -> String {
         return HotkeyManager.getKeyName(for: hotkeyCode) ?? "Unknown"
+    }
+    
+    func getMeetingModeHotkeyDisplayName() -> String {
+        return HotkeyManager.getKeyName(for: meetingModeHotkeyCode) ?? "Unknown"
     }
     
     func validateWhisperSetup() -> Bool {

@@ -16,6 +16,8 @@ class MenuBarManager: ObservableObject {
     @Published var isTranscribing = false
     @Published var lastTranscription = ""
     
+    private var isMeetingModeRecording = false
+    
     init() {
         setupServices()
         setupMenuBar()
@@ -50,8 +52,24 @@ class MenuBarManager: ObservableObject {
         // Observe hotkey changes from settings
         settingsManager?.$hotkeyCode
             .sink { [weak self] keyCode in
-                Logger.menuBar.info("🔄 Hotkey changed to: \(keyCode)")
-                self?.updateHotkey(keyCode: keyCode)
+                Logger.menuBar.info("🔄 Normal hotkey changed to: \(keyCode)")
+                self?.updateNormalHotkey(keyCode: keyCode)
+            }
+            .store(in: &cancellables)
+        
+        // Observe meeting mode hotkey changes from settings
+        settingsManager?.$meetingModeHotkeyCode
+            .sink { [weak self] keyCode in
+                Logger.menuBar.info("🔄 Meeting mode hotkey changed to: \(keyCode)")
+                self?.updateMeetingModeHotkey(keyCode: keyCode)
+            }
+            .store(in: &cancellables)
+        
+        // Observe meeting mode changes from settings
+        settingsManager?.$enableMeetingMode
+            .sink { [weak self] enableMeetingMode in
+                Logger.menuBar.info("🔄 Meeting mode changed to: \(enableMeetingMode)")
+                self?.updateRecordingMode(enableMeetingMode: enableMeetingMode)
             }
             .store(in: &cancellables)
         
@@ -65,6 +83,11 @@ class MenuBarManager: ObservableObject {
             TextInjector.requestAccessibilityPermission()
             textInjector.pollAccessibilityPermission()
         }
+        
+        // Screen recording permission will be handled by ScreenRecorder when needed
+
+        // Set initial recording mode
+        updateRecordingMode(enableMeetingMode: settingsManager?.enableMeetingMode ?? false)
     }
     
     private func setupHotkeys() {
@@ -72,10 +95,15 @@ class MenuBarManager: ObservableObject {
         hotkeyManager = HotkeyManager()
         hotkeyManager?.delegate = self
         
-        // Register hotkey from settings
-        let keyCode = settingsManager?.hotkeyCode ?? 63
-        Logger.menuBar.debug("Registering hotkey from settings: \(keyCode)")
-        hotkeyManager?.registerHotkey(keyCode: keyCode)
+        // Register normal hotkey from settings
+        let normalKeyCode = settingsManager?.hotkeyCode ?? 63
+        Logger.menuBar.debug("Registering normal hotkey from settings: \(normalKeyCode)")
+        hotkeyManager?.registerNormalHotkey(keyCode: normalKeyCode)
+        
+        // Register meeting mode hotkey from settings
+        let meetingModeKeyCode = settingsManager?.meetingModeHotkeyCode ?? 64
+        Logger.menuBar.debug("Registering meeting mode hotkey from settings: \(meetingModeKeyCode)")
+        hotkeyManager?.registerMeetingModeHotkey(keyCode: meetingModeKeyCode)
     }
     
     private func setupMenu() {
@@ -157,22 +185,48 @@ class MenuBarManager: ObservableObject {
         NSApp.terminate(nil)
     }
     
-    private func updateHotkey(keyCode: UInt32) {
-        Logger.menuBar.info("🔄 Updating hotkey to: \(keyCode)")
-        hotkeyManager?.updateHotkey(keyCode: keyCode)
+    private func updateNormalHotkey(keyCode: UInt32) {
+        Logger.menuBar.info("🔄 Updating normal hotkey to: \(keyCode)")
+        hotkeyManager?.updateNormalHotkey(keyCode: keyCode)
+    }
+    
+    private func updateMeetingModeHotkey(keyCode: UInt32) {
+        Logger.menuBar.info("🔄 Updating meeting mode hotkey to: \(keyCode)")
+        hotkeyManager?.updateMeetingModeHotkey(keyCode: keyCode)
+    }
+    
+    private func updateRecordingMode(enableMeetingMode: Bool) {
+        Logger.menuBar.info("🔄 Updating recording mode - meeting mode: \(enableMeetingMode)")
+        
+        let recordingMode: RecordingMode = enableMeetingMode ? .meetingMode : .microphoneOnly
+        audioManager?.recordingMode = recordingMode
+        
+        // Screen recording permission will be handled by ScreenRecorder when meeting mode is used
+        
+        Logger.menuBar.info("✅ Recording mode preference updated to: \(recordingMode) (actual mode determined per hotkey)")
     }
 }
 
 // MARK: - HotkeyManagerDelegate
 extension MenuBarManager: HotkeyManagerDelegate {
-    func hotkeyPressed() {
-        Logger.menuBar.info("🔥 hotkeyPressed() called")
+    func normalHotkeyPressed() {
+        Logger.menuBar.info("🔥 normalHotkeyPressed() called")
         startRecording()
     }
     
-    func hotkeyReleased() {
-        Logger.menuBar.info("🔥 hotkeyReleased() called")
+    func normalHotkeyReleased() {
+        Logger.menuBar.info("🔥 normalHotkeyReleased() called")
         stopRecording()
+    }
+    
+    func meetingModeHotkeyStartRecording() {
+        Logger.menuBar.info("🔥 meetingModeHotkeyStartRecording() called")
+        startMeetingModeRecording()
+    }
+    
+    func meetingModeHotkeyStopRecording() {
+        Logger.menuBar.info("🔥 meetingModeHotkeyStopRecording() called")
+        stopMeetingModeRecording()
     }
 }
 
@@ -192,8 +246,9 @@ extension MenuBarManager: AudioManagerDelegate {
             self.updateMenuBarIcon()
         }
         
-        // Send audio to Whisper service
-        whisperService?.transcribe(audioData: audioData)
+        // Send audio to Whisper service - include timestamps for meeting mode
+        Logger.menuBar.info("Transcribing with isMeetingModeRecording: \(isMeetingModeRecording)")
+        whisperService?.transcribe(audioData: audioData, includeTimestamps: isMeetingModeRecording)
     }
     
     func audioManager(_ manager: AudioManager, didFailWithError error: Error) {
@@ -201,6 +256,11 @@ extension MenuBarManager: AudioManagerDelegate {
             self.isRecording = false
             self.isTranscribing = false
             self.updateMenuBarIcon()
+            
+            // Hide floating indicator on error
+            if self.settingsManager?.showFloatingIndicator == true {
+                self.floatingIndicatorManager?.hideRecordingIndicator()
+            }
         }
         
         Logger.menuBar.error("Audio recording failed: \(error.localizedDescription)")
@@ -210,7 +270,7 @@ extension MenuBarManager: AudioManagerDelegate {
 // MARK: - WhisperServiceDelegate
 extension MenuBarManager: WhisperServiceDelegate {
     func whisperService(_ service: WhisperService, didTranscribe text: String) {
-        Logger.menuBar.info("📝 About to inject transcribed text: \"\(text)\"")
+        Logger.menuBar.info("📝 Transcribed text: \"\(text)\"")
         
         DispatchQueue.main.async {
             self.isTranscribing = false
@@ -218,14 +278,32 @@ extension MenuBarManager: WhisperServiceDelegate {
             self.updateMenuBarIcon()
         }
         
-        // Inject text into active application
-        textInjector?.injectText(text)
+        if isMeetingModeRecording {
+            // Save to file for meeting mode
+            saveMeetingTranscript(text)
+            // Reset meeting mode flag
+            isMeetingModeRecording = false
+        } else {
+            // Inject text into active application for normal mode
+            Logger.menuBar.info("📝 About to inject transcribed text: \"\(text)\"")
+            textInjector?.injectText(text)
+        }
     }
     
     func whisperService(_ service: WhisperService, didFailWithError error: Error) {
         DispatchQueue.main.async {
             self.isTranscribing = false
             self.updateMenuBarIcon()
+            
+            // Hide floating indicator on transcription error
+            if self.settingsManager?.showFloatingIndicator == true {
+                self.floatingIndicatorManager?.hideRecordingIndicator()
+            }
+        }
+        
+        // Reset meeting mode flag if it was set
+        if isMeetingModeRecording {
+            isMeetingModeRecording = false
         }
         
         Logger.menuBar.error("Transcription failed: \(error.localizedDescription)")
@@ -240,11 +318,11 @@ extension MenuBarManager {
             Logger.menuBar.warning("startRecording() blocked - already recording or transcribing")
             return 
         }
-        Logger.menuBar.debug("Calling audioManager.startRecording()")
+        Logger.menuBar.debug("Calling audioManager.startRecording() with microphoneOnly mode")
         if settingsManager?.showFloatingIndicator == true {
             floatingIndicatorManager?.showRecordingIndicator()
         }
-        audioManager?.startRecording()
+        audioManager?.startRecording(mode: .microphoneOnly)
     }
     
     private func stopRecording() {
@@ -259,12 +337,76 @@ extension MenuBarManager {
         }
         audioManager?.stopRecording()
     }
+    
+    private func startMeetingModeRecording() {
+        Logger.menuBar.info("🎤 startMeetingModeRecording() called - isRecording: \(isRecording), isTranscribing: \(isTranscribing)")
+        guard !isRecording && !isTranscribing else { 
+            Logger.menuBar.warning("startMeetingModeRecording() blocked - already recording or transcribing")
+            return 
+        }
+        
+        // Set meeting mode flag
+        isMeetingModeRecording = true
+        
+        Logger.menuBar.debug("Calling audioManager.startRecording() with meetingMode mode")
+        if settingsManager?.showFloatingIndicator == true {
+            floatingIndicatorManager?.showRecordingIndicator()
+        }
+        audioManager?.startRecording(mode: .meetingMode)
+    }
+    
+    private func stopMeetingModeRecording() {
+        Logger.menuBar.info("🛑 stopMeetingModeRecording() called - isRecording: \(isRecording)")
+        guard isRecording else { 
+            Logger.menuBar.warning("stopMeetingModeRecording() blocked - not currently recording")
+            return 
+        }
+        Logger.menuBar.debug("Calling audioManager.stopRecording()")
+        if settingsManager?.showFloatingIndicator == true {
+            floatingIndicatorManager?.hideRecordingIndicator()
+        }
+        audioManager?.stopRecording()
+    }
+    
+    private func saveMeetingTranscript(_ text: String) {
+        guard !text.isEmpty else {
+            Logger.menuBar.warning("Not saving empty transcript")
+            return
+        }
+        
+        // Create logs directory if it doesn't exist
+        let homeDirectory = FileManager.default.homeDirectoryForCurrentUser
+        let logsDirectory = homeDirectory.appendingPathComponent(".murmur_logs")
+        
+        do {
+            try FileManager.default.createDirectory(at: logsDirectory, withIntermediateDirectories: true, attributes: nil)
+        } catch {
+            Logger.menuBar.error("Failed to create logs directory: \(error)")
+            return
+        }
+        
+        // Create filename with date and timestamp
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd_HHmmss"
+        let timestamp = formatter.string(from: Date())
+        let filename = "log_\(timestamp)_transcript.txt"
+        let fileURL = logsDirectory.appendingPathComponent(filename)
+        
+        do {
+            try text.write(to: fileURL, atomically: true, encoding: .utf8)
+            Logger.menuBar.info("✅ Meeting transcript saved to: \(fileURL.path)")
+        } catch {
+            Logger.menuBar.error("Failed to save transcript: \(error)")
+        }
+    }
 }
 
 // MARK: - Protocols
 protocol HotkeyManagerDelegate: AnyObject {
-    func hotkeyPressed()
-    func hotkeyReleased()
+    func normalHotkeyPressed()
+    func normalHotkeyReleased()
+    func meetingModeHotkeyStartRecording()
+    func meetingModeHotkeyStopRecording()
 }
 
 protocol AudioManagerDelegate: AnyObject {

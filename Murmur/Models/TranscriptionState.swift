@@ -36,6 +36,7 @@ class TranscriptionSession: ObservableObject {
     @Published var state: TranscriptionState = .idle
     @Published var recordingDuration: TimeInterval = 0
     @Published var transcriptionHistory: [TranscriptionResult] = []
+    @Published var recordingMode: RecordingMode = .microphoneOnly
     
     private var recordingStartTime: Date?
     private var recordingTimer: Timer?

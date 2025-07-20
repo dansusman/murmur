@@ -65,7 +65,7 @@ class WhisperCppWrapper: NSObject, ObservableObject {
         return String(format: "%.0fMB", sizeInMB)
     }
     
-    func transcribe(audioData: Data, using modelType: WhisperModelType, language: String = "en") async throws -> String {
+    func transcribe(audioData: Data, using modelType: WhisperModelType, language: String = "en", includeTimestamps: Bool = false) async throws -> String {
         guard !whisperBinaryPath.isEmpty else {
             throw WhisperError.missingBinary
         }
@@ -88,13 +88,16 @@ class WhisperCppWrapper: NSObject, ObservableObject {
             let result = try await runWhisperProcess(
                 audioFile: audioFile,
                 modelPath: model.path,
-                language: language
+                language: language,
+                includeTimestamps: includeTimestamps
             )
             
             // Clean up temporary file
             try? FileManager.default.removeItem(at: audioFile)
             
-            return result
+            // Format the timestamped output for better readability
+            let formattedResult = includeTimestamps ? formatTimestampedTranscription(result) : result
+            return formattedResult
         } catch {
             // Clean up on error
             try? FileManager.default.removeItem(at: audioFile)
@@ -102,24 +105,30 @@ class WhisperCppWrapper: NSObject, ObservableObject {
         }
     }
     
-    private func runWhisperProcess(audioFile: URL, modelPath: String, language: String) async throws -> String {
+    private func runWhisperProcess(audioFile: URL, modelPath: String, language: String, includeTimestamps: Bool) async throws -> String {
         return try await withCheckedThrowingContinuation { continuation in
             let process = Process()
             process.executableURL = URL(fileURLWithPath: whisperBinaryPath)
             
             // Configure whisper.cpp arguments
-            process.arguments = [
+            var arguments = [
                 "-m", modelPath,           // Model path
                 "-f", audioFile.path,      // Audio file
                 "-l", language,            // Language
                 "-np",                     // No print progress
-                "-nt",                     // No timestamps
                 "-of", "txt",              // Output format: text only
                 "-pc",                     // Print colors off
                 "-pp",                     // Print progress off
                 "--output-file", "",       // Output to stdout
                 "-t", "4"                  // Use 4 threads
             ]
+            
+            // Only add -nt (no timestamps) for non-meeting mode
+            if !includeTimestamps {
+                arguments.append("-nt")
+            }
+            
+            process.arguments = arguments
             
             let outputPipe = Pipe()
             let errorPipe = Pipe()
@@ -184,7 +193,9 @@ class WhisperCppWrapper: NSObject, ObservableObject {
             return ""
         }
         
-        return cleanedOutput
+        // Remove only leading whitespace that Whisper.cpp adds due to tokenization
+        let trimmedOutput = cleanedOutput.drop(while: { $0.isWhitespace })
+        return String(trimmedOutput)
     }
     
     private func removeAnsiEscapeCodes(_ text: String) -> String {
@@ -213,6 +224,70 @@ class WhisperCppWrapper: NSObject, ObservableObject {
         } else {
             return .tiny // Default fallback
         }
+    }
+    
+    private func formatTimestampedTranscription(_ rawOutput: String) -> String {
+        // Clean up the whisper.cpp output to make timestamps more readable
+        let lines = rawOutput.components(separatedBy: .newlines)
+        var formattedLines: [String] = []
+        
+        for line in lines {
+            let trimmedLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmedLine.isEmpty else { continue }
+            
+            // Split line by timestamp patterns to handle multiple timestamps per line
+            var processedLine = trimmedLine
+            var hasTimestamps = false
+            
+            // Use regex to find all timestamp patterns in the line
+            let timestampPattern = #"\[[\d:\.]+\s*-->\s*[\d:\.]+\]"#
+            let regex = try! NSRegularExpression(pattern: timestampPattern)
+            let matches = regex.matches(in: processedLine, range: NSRange(processedLine.startIndex..., in: processedLine))
+            
+            if !matches.isEmpty {
+                hasTimestamps = true
+                var lastEnd = processedLine.startIndex
+                
+                for match in matches {
+                    let range = Range(match.range, in: processedLine)!
+                    
+                    // Add any text before this timestamp
+                    if lastEnd < range.lowerBound {
+                        let textBefore = String(processedLine[lastEnd..<range.lowerBound])
+                            .trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !textBefore.isEmpty {
+                            formattedLines.append(textBefore)
+                            formattedLines.append("") // Add newline after text
+                        }
+                    }
+                    
+                    // Add the formatted timestamp
+                    let timestamp = String(processedLine[range])
+                        .replacingOccurrences(of: "[00:", with: "[")
+                        .replacingOccurrences(of: " --> 00:", with: " → ")
+                    formattedLines.append(timestamp)
+                    formattedLines.append("") // Add newline after timestamp
+                    
+                    lastEnd = range.upperBound
+                }
+                
+                // Add any remaining text after the last timestamp
+                if lastEnd < processedLine.endIndex {
+                    let textAfter = String(processedLine[lastEnd...])
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !textAfter.isEmpty {
+                        formattedLines.append(textAfter)
+                        formattedLines.append("") // Add newline after text
+                    }
+                }
+            } else {
+                // No timestamps in this line, treat as regular text
+                formattedLines.append(trimmedLine)
+                formattedLines.append("") // Add newline after text
+            }
+        }
+        
+        return formattedLines.joined(separator: "\n")
     }
 }
 

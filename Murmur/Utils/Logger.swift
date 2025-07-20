@@ -25,7 +25,7 @@ class Logger {
     private let osLog: OSLog
     
     static var isEnabled: Bool = true
-    static var minimumLevel: LogLevel = .debug
+    static var minimumLevel: LogLevel = .info
     
     init(component: String) {
         self.component = component
@@ -93,5 +93,6 @@ extension Logger {
     static let textInjector = Logger(component: "TextInjector")
     static let whisper = Logger(component: "WhisperService")
     static let settings = Logger(component: "SettingsManager")
+    static let screenCapture = Logger(component: "ScreenCapture")
     static let app = Logger(component: "MurmurApp")
 }

@@ -54,6 +54,9 @@ struct GeneralSettingsView: View {
                 Toggle("Show floating recording indicator", isOn: $settingsManager.showFloatingIndicator)
                     .help("Display a floating indicator when recording audio")
                 
+                Toggle("Enable Meeting Mode", isOn: $settingsManager.enableMeetingMode)
+                    .help("Capture both microphone and system audio for meeting transcription (requires Screen Recording permission)")
+
                 HStack {
                     Picker("Language", selection: $settingsManager.language) {
                         Text("Auto-detect").tag("auto")
@@ -88,33 +91,68 @@ struct GeneralSettingsView: View {
 struct HotkeySettingsView: View {
     @EnvironmentObject var settingsManager: SettingsManager
     @State private var showingHotkeyPicker = false
+    @State private var showingMeetingModeHotkeyPicker = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             Text("Hotkey Settings")
                 .font(.headline)
             
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Press and hold the hotkey to start recording, release to stop and transcribe.")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                
-                HStack {
-                    Text("Current hotkey:")
-                    Button(settingsManager.getHotkeyDisplayName()) {
-                        showingHotkeyPicker = true
-                    }
-                    .buttonStyle(.bordered)
-                    .font(.body.monospaced())
-                }
-                
-                if showingHotkeyPicker {
-                    HotkeyPickerView(selectedKeyCode: $settingsManager.hotkeyCode) {
-                        showingHotkeyPicker = false
+            VStack(alignment: .leading, spacing: 16) {
+                // Normal hotkey section
+                GroupBox("Normal Recording") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Press and hold the hotkey to start recording, release to stop and transcribe.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        HStack {
+                            Text("Current hotkey:")
+                            Button(settingsManager.getHotkeyDisplayName()) {
+                                showingHotkeyPicker = true
+                            }
+                            .buttonStyle(.bordered)
+                            .font(.body.monospaced())
+                        }
+                        
+                        if showingHotkeyPicker {
+                            HotkeyPickerView(selectedKeyCode: $settingsManager.hotkeyCode) {
+                                showingHotkeyPicker = false
+                            }
+                            .padding()
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(8)
+                        }
                     }
                     .padding()
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(8)
+                }
+                
+                // Meeting mode hotkey section
+                GroupBox("Meeting Mode Recording") {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Tap once to start recording, tap again to stop. Captures microphone + system audio when meeting mode is enabled.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        HStack {
+                            Text("Meeting mode hotkey:")
+                            Button(settingsManager.getMeetingModeHotkeyDisplayName()) {
+                                showingMeetingModeHotkeyPicker = true
+                            }
+                            .buttonStyle(.bordered)
+                            .font(.body.monospaced())
+                        }
+                        
+                        if showingMeetingModeHotkeyPicker {
+                            HotkeyPickerView(selectedKeyCode: $settingsManager.meetingModeHotkeyCode) {
+                                showingMeetingModeHotkeyPicker = false
+                            }
+                            .padding()
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(8)
+                        }
+                    }
+                    .padding()
                 }
                 
                 VStack(alignment: .leading, spacing: 8) {
@@ -123,8 +161,9 @@ struct HotkeySettingsView: View {
                         .foregroundColor(.secondary)
                     
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("• FN (Function) key - Default, doesn't interfere with other shortcuts")
+                        Text("• FN (Function) key - Good for normal recording")
                         Text("• F13-F20 - Function keys that are rarely used")
+                        Text("• F17 (default for meeting mode) - Rarely conflicts with other apps")
                         Text("• Avoid: Command, Option, Control - These interfere with other shortcuts")
                     }
                     .font(.caption)
@@ -249,7 +288,8 @@ struct AdvancedSettingsView: View {
                         Text("• Microphone access - for audio recording")
                         Text("• Accessibility permissions - for text insertion")
                         Text("• Input monitoring - for global hotkey detection")
-                        
+                        Text("• Screen recording - for meeting mode system audio capture")
+
                         Button("Open System Settings") {
                             NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/System Settings.app"))
                         }
