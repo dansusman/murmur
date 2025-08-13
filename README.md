@@ -2,6 +2,8 @@
 
 A lightweight macOS menu bar application for AI-powered voice transcription. Hold a hotkey to record audio, release to transcribe using Whisper AI and automatically paste the text into the active application.
 
+I'm putting this app on pause after discovering [Voiceink](https://github.com/Beingpax/VoiceInk).
+
 ## Features
 
 - **Global Hotkey Recording**: Hold FN key (or customize) to record audio
